@@ -73,9 +73,3 @@ ax.scatter(X_test, y_test, **test_plot_config)
 ax.plot(X_test, y_pred, **get_sklearn_plot_config(sklearn_r2_score))
 ax.legend()
 plt.show()
-
-
-
-### "Linear Regression Model with Conrete ML"
-# FHE stuff
-
