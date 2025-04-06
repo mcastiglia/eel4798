@@ -8,32 +8,11 @@ from sklearn.model_selection import train_test_split
 
 from concrete.ml.sklearn import LinearRegression as ConcreteLinearRegression
 
+from profiler import profile_block
+
 #%matplotlib inline
 import matplotlib.pyplot as plt
 from IPython.display import display
-
-
-
-### Visualization Tooling ###
-
-train_plot_config = {"c": "black", "marker": "D", "s": 15, "label": "Train data"}
-test_plot_config = {"c": "red", "marker": "x", "s": 15, "label": "Test data"}
-
-
-def get_sklearn_plot_config(r2_score=None):
-    label = "Scikit-Learn"
-    if r2_score is not None:
-        label += f", {'$R^2$'}={r2_score:.4f}"
-    return {"c": "blue", "linewidth": 2.5, "label": label}
-
-
-def get_concrete_plot_config(r2_score=None):
-    label = "Concrete ML"
-    if r2_score is not None:
-        label += f", {'$R^2$'}={r2_score:.4f}"
-    return {"c": "orange", "linewidth": 2.5, "label": label}
-
-
 
 ### Dataset Generation ###
 # pylint: disable=unbalanced-tuple-unpacking
@@ -50,29 +29,14 @@ sorted_indexes = np.argsort(np.squeeze(X_test))
 X_test = X_test[sorted_indexes, :]
 y_test = y_test[sorted_indexes]
 
-
-
 ### Linear Regression Model from SkLearn ###
 
 sklearn_lr = SklearnLinearRegression()
 sklearn_lr.fit(X_train, y_train)
-y_pred = sklearn_lr.predict(X_test)
+y_pred = profile_block(sklearn_lr.predict, X_test, label="SKLearn Linear Regression")
 
 # Compute the R2 scores
 sklearn_r2_score = r2_score(y_test, y_pred)
-
-# Visualize Outputs
-
-plt.ioff()  # Turn off interactive mode
-plt.clf()  # Clear any existing figures
-
-fig, ax = plt.subplots(1, figsize=(10, 5))
-fig.patch.set_facecolor("white")
-ax.scatter(X_train, y_train, **train_plot_config)
-ax.scatter(X_test, y_test, **test_plot_config)
-ax.plot(X_test, y_pred, **get_sklearn_plot_config(sklearn_r2_score))
-ax.legend()
-plt.show()
 
 ### "Linear Regression Model with Conrete ML"
 
@@ -89,22 +53,10 @@ x_space = x_space[:, np.newaxis]
 y_pred_q_space = concrete_lr.predict(x_space)
 
 # Now, we can test our Concrete ML model on the clear test data
-y_pred_q = concrete_lr.predict(X_test)
+y_pred_q = profile_block(concrete_lr.predict, X_test, label="Concrete ML Non-FHE Linear Regression")
 
 # Compute the R2 scores
 quantized_r2_score = r2_score(y_test, y_pred_q)
-
-plt.ioff()
-
-plt.clf()
-fig, ax = plt.subplots(1, figsize=(12, 8))
-fig.patch.set_facecolor("white")
-ax.scatter(X_train, y_train, **train_plot_config)
-ax.scatter(X_test, y_test, **test_plot_config)
-ax.plot(X_test, y_pred, **get_sklearn_plot_config(sklearn_r2_score))
-ax.plot(x_space, y_pred_q_space, **get_concrete_plot_config(quantized_r2_score))
-ax.legend()
-display(fig)
 
 fhe_circuit = concrete_lr.compile(X_train)
 
@@ -115,7 +67,7 @@ fhe_circuit.client.keygen(force=False)
 print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
 
 time_begin = time.time()
-y_pred_fhe = concrete_lr.predict(X_test, fhe="execute")
+y_pred_fhe = profile_block(concrete_lr.predict, X_test, fhe="execute", label="Concrete ML FHE Linear Regression")
 print(f"Execution time: {(time.time() - time_begin) / len(X_test):.4f} seconds per sample")
 
 # Measure the FHE R2 score

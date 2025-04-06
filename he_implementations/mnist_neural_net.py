@@ -11,6 +11,8 @@ from torch import nn
 
 from concrete.ml.sklearn import NeuralNetClassifier
 
+from profiler import profile_block
+
 use_gpu_if_available = False
 device = "cuda" if use_gpu_if_available and check_gpu_available() else "cpu"
 
@@ -79,7 +81,7 @@ simulated_fhe_circuit = model.compile(inputset, device=device)
 print(f"Circuit of {simulated_fhe_circuit.graph.maximum_integer_bit_width()}-bits (FHE simulation)")
 
 # Evaluate the model using simulation
-y_preds_simulated = model.predict(x_test, fhe="simulate")
+y_preds_simulated = profile_block(model.predict, x_test, label="Concrete Non-FHE Neural Net")
 
 print(
     "The test accuracy (with FHE simulation) of the FHE model is "
@@ -102,7 +104,7 @@ y_test_sample = y_test.head(n_samples)
 simulated_fhe_predictions = model.predict(x_test_sample, fhe="simulate")
 
 time_begin = time.time()
-fhe_predictions = model.predict(x_test_sample, fhe="execute")
+fhe_predictions = profile_block(model.predict, x_test_sample, fhe="execute", label="Concrete FHE Neural Net")
 seconds_per_sample = (time.time() - time_begin) / len(x_test_sample)
 print(f"Execution time in FHE: {seconds_per_sample:.2f} seconds per sample\n")
 

@@ -12,6 +12,8 @@ from concrete.ml.sklearn import LogisticRegression as ConcreteLogisticRegression
 import matplotlib.pyplot as plt
 from IPython.display import display
 
+from profiler import profile_block
+
 
 
 ### Generate Dataset
@@ -38,12 +40,18 @@ x_test_grid, y_test_grid = np.meshgrid(
 )
 x_grid_test = np.vstack([x_test_grid.ravel(), y_test_grid.ravel()]).transpose()
 
+sklearn_logr = SklearnLogisticRegression()
+sklearn_logr.fit(x_train, y_train)
+
 concrete_logr = ConcreteLogisticRegression(n_bits=8)
 concrete_logr.fit(x_train, y_train)
 
+_ = sklearn_logr.predict_proba(x_test)[:, 1]
+_ = profile_block(sklearn_logr.predict, x_test, label="SKLearn Log Regression")
+
 # Predict on the test set
 y_proba_q = concrete_logr.predict_proba(x_test)[:, 1]
-y_pred_q = concrete_logr.predict(x_test)
+y_pred_q = profile_block(concrete_logr.predict, x_test, label="Non-FHE Log Regression")
 
 # Compute the probabilities on the whole domain in order to be able to plot the contours
 y_proba_q_grid = concrete_logr.predict_proba(x_grid_test)[:, 1]
@@ -58,5 +66,5 @@ fhe_circuit.client.keygen(force=False)
 print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
 
 time_begin = time.time()
-y_pred_fhe = concrete_logr.predict(x_test, fhe="execute")
+y_pred_fhe = profile_block(concrete_logr.predict, x_test, fhe="execute", label="FHE Log Regression")
 print(f"Execution time: {(time.time() - time_begin) / len(x_test):.4f} seconds per sample")

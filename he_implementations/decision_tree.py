@@ -6,6 +6,8 @@ import numpy
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
+from profiler import profile_block
+
 features, classes = fetch_openml(data_id=44, as_frame=False, cache=True, return_X_y=True)
 classes = classes.astype(numpy.int64)
 
@@ -43,20 +45,26 @@ grid_search = GridSearchCV(
 
 print("before grid search")
 
-gs_results = grid_search.fit(x_train, y_train)
-print("Best hyper parameters:", gs_results.best_params_)
-print("Best score:", gs_results.best_score_)
+# gs_results = grid_search.fit(x_train, y_train)
+# print("Best hyper parameters:", gs_results.best_params_)
+# print("Best score:", gs_results.best_score_)
 
 # Build the model with best hyper parameters
+# model = ConcreteDecisionTreeClassifier(
+#     max_features=gs_results.best_params_["max_features"],
+#     min_samples_leaf=gs_results.best_params_["min_samples_leaf"],
+#     min_samples_split=gs_results.best_params_["min_samples_split"],
+#     max_depth=gs_results.best_params_["max_depth"],
+#     n_bits=6,
+# )
+
 model = ConcreteDecisionTreeClassifier(
-    max_features=gs_results.best_params_["max_features"],
-    min_samples_leaf=gs_results.best_params_["min_samples_leaf"],
-    min_samples_split=gs_results.best_params_["min_samples_split"],
-    max_depth=gs_results.best_params_["max_depth"],
+    max_features=None,
+    min_samples_leaf=10,
+    min_samples_split=100,
+    max_depth=None,
     n_bits=6,
 )
-
-
 
 ### Compute Test Set Metrics
 
@@ -76,7 +84,7 @@ print(f"Concrete average precision score: {concrete_average_precision:0.2f}")
 # Show the confusion matrix on x_test
 from sklearn.metrics import confusion_matrix
 
-y_pred = model.predict(x_test)
+y_pred = profile_block(model.predict, x_test, label="SKLearn Decision Tree")
 true_negative, false_positive, false_negative, true_positive = confusion_matrix(
     y_test, y_pred, normalize="true"
 ).ravel()
@@ -115,8 +123,10 @@ y_reference = y_test[:FHE_SAMPLES]
 
 # Predict in FHE for a few examples
 time_begin = time.time()
-y_pred_fhe = model.predict(x_test, fhe="execute")
+y_pred_fhe = profile_block(model.predict, x_test, fhe="execute", label="Concrete ML FHE Decision Tree")
 print(f"Execution time: {(time.time() - time_begin) / len(x_test):.2f} seconds per sample")
+
+y_pred_fhe = profile_block(model.predict, x_test, label="Concrete ML Non-FHE Decision Tree")
 
 # Check prediction FHE vs sklearn
 print(f"Ground truth:       {y_reference}")

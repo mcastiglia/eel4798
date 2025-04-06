@@ -13,44 +13,7 @@ from sklearn.svm import LinearSVC as SklearnLinearSVC
 # import the concrete-ml LinearSVC implementation
 from concrete.ml.sklearn.svm import LinearSVC as ConcreteLinearSVC
 
-# Visualization function
-def plot_decision_boundary(
-    clf,
-    X,
-    y,
-    title="LinearSVC Decision Boundary",
-    xlabel="First Principal Component",
-    ylabel="Second Principal Component",
-):
-    # Perform PCA to reduce the dimensionality to 2
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X)
-
-    # Create the mesh grid
-    x_min, x_max = X_pca[:, 0].min() - 1, X_pca[:, 0].max() + 1
-    y_min, y_max = X_pca[:, 1].min() - 1, X_pca[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.02), np.arange(y_min, y_max, 0.02))
-
-    # Transform the mesh grid points back to the original feature space
-    mesh_points = pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()])
-
-    # Make predictions using the classifier
-    Z = clf.predict(mesh_points)
-    Z = Z.reshape(xx.shape)
-
-    # Plot the decision boundary
-    _, ax = plt.subplots()
-    ax.contourf(xx, yy, Z, alpha=0.8)
-    ax.scatter(X_pca[:, 0], X_pca[:, 1], c=y, edgecolors="k", marker="o", s=50)
-
-    # Calculate the accuracy
-    accuracy = accuracy_score(y, clf.predict(X))
-
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(f"{title} (Accuracy: {accuracy:.4f})")
-    plt.show()
-
+from profiler import profile_block
 
 
 ### Import and Preprocess Dataset
@@ -80,16 +43,20 @@ X_test = scaler.transform(X_test)
 y_train = y_train.astype(int)
 y_test = y_test.astype(int)
 
+svm_sklearn = SklearnLinearSVC(max_iter=100)
+svm_sklearn.fit(X_train, y_train)
+
 # Perform the same steps with the Concrete ML LinearSVC implementation
 svm_concrete = ConcreteLinearSVC(max_iter=100, n_bits=8)
 svm_concrete.fit(X_train, y_train)
-# plot the boundary
-plot_decision_boundary(svm_concrete, X_test, y_test)
+
+profile_block(svm_sklearn.predict, X_test, label="SKLearn SVM")
 
 # A circuit needs to be compiled to enable FHE execution
 circuit = svm_concrete.compile(X_train)
 # Now that a circuit is compiled, the svm_concrete can predict value with FHE
-y_pred = svm_concrete.predict(X_test, fhe="execute")
-accuracy = accuracy_score(y_test, y_pred)
+y_pred_fhe = profile_block(svm_concrete.predict, X_test, label="Concrete Non-FHE SVM")
+y_pred_fhe = profile_block(svm_concrete.predict, X_test, fhe="execute", label="Concrete FHE SVM")
+accuracy = accuracy_score(y_test, y_pred_fhe)
 # print the accuracy
 print(f"FHE Accuracy: {accuracy:.4f} (bit-width: {circuit.graph.maximum_integer_bit_width()})")
