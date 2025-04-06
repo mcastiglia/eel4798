@@ -43,7 +43,7 @@ grid_search = GridSearchCV(
     n_jobs=1,
 )
 
-print("before grid search")
+# print("before grid search")
 
 # gs_results = grid_search.fit(x_train, y_train)
 # print("Best hyper parameters:", gs_results.best_params_)
@@ -78,8 +78,8 @@ y_pred_concrete = model.predict_proba(x_test)[:, 1]
 y_pred_sklearn = sklearn_model.predict_proba(x_test)[:, 1]
 concrete_average_precision = average_precision_score(y_test, y_pred_concrete)
 sklearn_average_precision = average_precision_score(y_test, y_pred_sklearn)
-print(f"Sklearn average precision score: {sklearn_average_precision:0.2f}")
-print(f"Concrete average precision score: {concrete_average_precision:0.2f}")
+# print(f"Sklearn average precision score: {sklearn_average_precision:0.2f}")
+# print(f"Concrete average precision score: {concrete_average_precision:0.2f}")
 
 # Show the confusion matrix on x_test
 from sklearn.metrics import confusion_matrix
@@ -92,13 +92,13 @@ true_negative, false_positive, false_negative, true_positive = confusion_matrix(
 num_samples = len(y_test)
 num_spam = sum(y_test)
 
-print(f"Number of test samples: {num_samples}")
-print(f"Number of spams in test samples: {num_spam}")
+# print(f"Number of test samples: {num_samples}")
+# print(f"Number of spams in test samples: {num_spam}")
 
-print(f"True Negative (legit mail well classified) rate: {true_negative}")
-print(f"False Positive (legit mail classified as spam) rate: {false_positive}")
-print(f"False Negative (spam mail classified as legit) rate: {false_negative}")
-print(f"True Positive (spam well classified) rate: {true_positive}")
+# print(f"True Negative (legit mail well classified) rate: {true_negative}")
+# print(f"False Positive (legit mail classified as spam) rate: {false_positive}")
+# print(f"False Negative (spam mail classified as legit) rate: {false_negative}")
+# print(f"True Positive (spam well classified) rate: {true_positive}")
 
 from concrete.compiler import check_gpu_available
 
@@ -109,11 +109,11 @@ device = "cuda" if use_gpu_if_available and check_gpu_available() else "cpu"
 circuit = model.compile(x_train, device=device)
 
 # Generate a key for the circuit
-print(f"Generating a key for an {circuit.graph.maximum_integer_bit_width()}-bit circuit")
+# print(f"Generating a key for an {circuit.graph.maximum_integer_bit_width()}-bit circuit")
 
 time_begin = time.time()
 circuit.client.keygen(force=False)
-print(f"Key generation time: {time.time() - time_begin:.2f} seconds")
+# print(f"Key generation time: {time.time() - time_begin:.2f} seconds")
 
 # Reduce the sample size for a faster total execution time
 FHE_SAMPLES = 10
@@ -124,16 +124,16 @@ y_reference = y_test[:FHE_SAMPLES]
 # Predict in FHE for a few examples
 time_begin = time.time()
 y_pred_fhe = profile_block(model.predict, x_test, fhe="execute", label="Concrete ML FHE Decision Tree")
-print(f"Execution time: {(time.time() - time_begin) / len(x_test):.2f} seconds per sample")
+# print(f"Execution time: {(time.time() - time_begin) / len(x_test):.2f} seconds per sample")
 
 y_pred_fhe = profile_block(model.predict, x_test, label="Concrete ML Non-FHE Decision Tree")
 
 # Check prediction FHE vs sklearn
-print(f"Ground truth:       {y_reference}")
-print(f"Prediction sklearn: {y_pred}")
-print(f"Prediction FHE:     {y_pred_fhe}")
+# print(f"Ground truth:       {y_reference}")
+# print(f"Prediction sklearn: {y_pred}")
+# print(f"Prediction FHE:     {y_pred_fhe}")
 
-print(
-    f"{numpy.sum(y_pred_fhe == y_pred)}/"
-    "10 predictions are similar between the FHE model and the clear sklearn model."
-)
+# print(
+#     f"{numpy.sum(y_pred_fhe == y_pred)}/"
+#     "10 predictions are similar between the FHE model and the clear sklearn model."
+# )

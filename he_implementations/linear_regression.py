@@ -60,34 +60,34 @@ quantized_r2_score = r2_score(y_test, y_pred_q)
 
 fhe_circuit = concrete_lr.compile(X_train)
 
-print(f"Generating a key for a {fhe_circuit.graph.maximum_integer_bit_width()}-bit circuit")
+# print(f"Generating a key for a {fhe_circuit.graph.maximum_integer_bit_width()}-bit circuit")
 
 time_begin = time.time()
 fhe_circuit.client.keygen(force=False)
-print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
+# print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
 
 time_begin = time.time()
 y_pred_fhe = profile_block(concrete_lr.predict, X_test, fhe="execute", label="Concrete ML FHE Linear Regression")
-print(f"Execution time: {(time.time() - time_begin) / len(X_test):.4f} seconds per sample")
+# print(f"Execution time: {(time.time() - time_begin) / len(X_test):.4f} seconds per sample")
 
 # Measure the FHE R2 score
 fhe_r2_score = r2_score(y_test, y_pred_fhe)
 
-print("R^2 scores:")
-print(f"scikit-learn (clear): {sklearn_r2_score:.4f}")
-print(f"Concrete ML (quantized): {quantized_r2_score:.4f}")
-print(f"Concrete ML (FHE): {fhe_r2_score:.4f}")
+# print("R^2 scores:")
+# print(f"scikit-learn (clear): {sklearn_r2_score:.4f}")
+# print(f"Concrete ML (quantized): {quantized_r2_score:.4f}")
+# print(f"Concrete ML (FHE): {fhe_r2_score:.4f}")
 
 # Measure the error of the FHE quantized model with respect to the clear scikit-learn float model
 concrete_score_difference = abs(fhe_r2_score - quantized_r2_score) * 100 / quantized_r2_score
-print(
-    "\nRelative score difference for Concrete ML (quantized clear) vs. Concrete ML (FHE):",
-    f"{concrete_score_difference:.2f}%",
-)
+# print(
+#     "\nRelative score difference for Concrete ML (quantized clear) vs. Concrete ML (FHE):",
+#     f"{concrete_score_difference:.2f}%",
+# )
 
 # Measure the error of the FHE quantized model with respect to the clear float model
 score_difference = abs(fhe_r2_score - sklearn_r2_score) * 100 / sklearn_r2_score
-print(
-    "Relative score difference for scikit-learn (clear) vs. Concrete ML (FHE) scores:",
-    f"{score_difference:.2f}%",
-)
+# print(
+#     "Relative score difference for scikit-learn (clear) vs. Concrete ML (FHE) scores:",
+#     f"{score_difference:.2f}%",
+# )

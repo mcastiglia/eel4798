@@ -59,4 +59,4 @@ y_pred_fhe = profile_block(svm_concrete.predict, X_test, label="Concrete Non-FHE
 y_pred_fhe = profile_block(svm_concrete.predict, X_test, fhe="execute", label="Concrete FHE SVM")
 accuracy = accuracy_score(y_test, y_pred_fhe)
 # print the accuracy
-print(f"FHE Accuracy: {accuracy:.4f} (bit-width: {circuit.graph.maximum_integer_bit_width()})")
+# print(f"FHE Accuracy: {accuracy:.4f} (bit-width: {circuit.graph.maximum_integer_bit_width()})")

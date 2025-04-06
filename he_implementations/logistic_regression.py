@@ -51,7 +51,7 @@ _ = profile_block(sklearn_logr.predict, x_test, label="SKLearn Log Regression")
 
 # Predict on the test set
 y_proba_q = concrete_logr.predict_proba(x_test)[:, 1]
-y_pred_q = profile_block(concrete_logr.predict, x_test, label="Non-FHE Log Regression")
+y_pred_q = profile_block(concrete_logr.predict, x_test, label="Concrete ML Non-FHE Log Regression")
 
 # Compute the probabilities on the whole domain in order to be able to plot the contours
 y_proba_q_grid = concrete_logr.predict_proba(x_grid_test)[:, 1]
@@ -59,12 +59,12 @@ y_pred_q_grid = concrete_logr.predict(x_grid_test)
 
 fhe_circuit = concrete_logr.compile(x_train)
 
-print(f"Generating a key for an {fhe_circuit.graph.maximum_integer_bit_width()}-bit circuit")
+# print(f"Generating a key for an {fhe_circuit.graph.maximum_integer_bit_width()}-bit circuit")
 
 time_begin = time.time()
 fhe_circuit.client.keygen(force=False)
-print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
+# print(f"Key generation time: {time.time() - time_begin:.4f} seconds")
 
 time_begin = time.time()
-y_pred_fhe = profile_block(concrete_logr.predict, x_test, fhe="execute", label="FHE Log Regression")
-print(f"Execution time: {(time.time() - time_begin) / len(x_test):.4f} seconds per sample")
+y_pred_fhe = profile_block(concrete_logr.predict, x_test, fhe="execute", label="Concrete ML FHE Log Regression")
+# print(f"Execution time: {(time.time() - time_begin) / len(x_test):.4f} seconds per sample")

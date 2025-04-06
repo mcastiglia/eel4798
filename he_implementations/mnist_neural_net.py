@@ -78,22 +78,22 @@ inputset = x_train.head(1000)
 simulated_fhe_circuit = model.compile(inputset, device=device)
 
 # Print the circuit's maximum bit-width reached during compilation
-print(f"Circuit of {simulated_fhe_circuit.graph.maximum_integer_bit_width()}-bits (FHE simulation)")
+# print(f"Circuit of {simulated_fhe_circuit.graph.maximum_integer_bit_width()}-bits (FHE simulation)")
 
 # Evaluate the model using simulation
 y_preds_simulated = profile_block(model.predict, x_test, label="Concrete Non-FHE Neural Net")
 
-print(
-    "The test accuracy (with FHE simulation) of the FHE model is "
-    f"{accuracy_score(y_test, y_preds_simulated):.2f}"
-)
+# print(
+#     "The test accuracy (with FHE simulation) of the FHE model is "
+#     f"{accuracy_score(y_test, y_preds_simulated):.2f}"
+# )
 
 # Print the circuit's maximum bit-width reached during compilation
-print(f"FHE circuit of {model.fhe_circuit.graph.maximum_integer_bit_width()}-bits")
+# print(f"FHE circuit of {model.fhe_circuit.graph.maximum_integer_bit_width()}-bits")
 
 time_begin = time.time()
 model.fhe_circuit.client.keygen(force=True)
-print(f"Key generation time: {time.time() - time_begin:.2f} seconds")
+# print(f"Key generation time: {time.time() - time_begin:.2f} seconds")
 
 # Reduce the test set
 n_samples = 3
@@ -106,8 +106,8 @@ simulated_fhe_predictions = model.predict(x_test_sample, fhe="simulate")
 time_begin = time.time()
 fhe_predictions = profile_block(model.predict, x_test_sample, fhe="execute", label="Concrete FHE Neural Net")
 seconds_per_sample = (time.time() - time_begin) / len(x_test_sample)
-print(f"Execution time in FHE: {seconds_per_sample:.2f} seconds per sample\n")
+# print(f"Execution time in FHE: {seconds_per_sample:.2f} seconds per sample\n")
 
-print("Expected values:", y_test_sample.tolist())
-print("Simulated prediction values:", simulated_fhe_predictions)
-print("FHE prediction values:", fhe_predictions)
+# print("Expected values:", y_test_sample.tolist())
+# print("Simulated prediction values:", simulated_fhe_predictions)
+# print("FHE prediction values:", fhe_predictions)
