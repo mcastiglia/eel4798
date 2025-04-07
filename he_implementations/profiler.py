@@ -5,6 +5,7 @@ import asyncio
 import statistics
 from functools import wraps
 import concurrent.futures
+import os
 
 def profile_block(func, *args, label="", sample_interval=0.1, **kwargs):
     """Profile a function's execution with detailed resource usage.
@@ -21,12 +22,24 @@ def profile_block(func, *args, label="", sample_interval=0.1, **kwargs):
     # Lists to store resource samples
     cpu_samples = []
     mem_samples = []
+    disk_read_samples = []
+    disk_write_samples = []
     stop_sampling = False
+    
+    # Get initial disk counters
+    initial_disk_io = process.io_counters() if hasattr(process, 'io_counters') else None
     
     async def sample_resources():
         while not stop_sampling:
             cpu_samples.append(psutil.cpu_percent(interval=None))
             mem_samples.append(process.memory_info().rss / 1024**2)
+            
+            # Sample disk I/O if available
+            if hasattr(process, 'io_counters'):
+                io_counters = process.io_counters()
+                disk_read_samples.append(io_counters.read_bytes)
+                disk_write_samples.append(io_counters.write_bytes)
+                
             await asyncio.sleep(sample_interval)
     
     # Use timeit for accurate timing
@@ -49,6 +62,7 @@ def profile_block(func, *args, label="", sample_interval=0.1, **kwargs):
         loop.stop()
     
     end_mem = process.memory_info().rss / 1024**2
+    final_disk_io = process.io_counters() if hasattr(process, 'io_counters') else None
     
     # Generate report
     header = f"\n--- Resource Usage: {label} ---"
@@ -74,6 +88,31 @@ def profile_block(func, *args, label="", sample_interval=0.1, **kwargs):
         print(f"  Peak: {max(cpu_samples):.2f}%")
     else:
         print(f"CPU usage: {psutil.cpu_percent():.2f}%")
+    
+    # Disk I/O information
+    if initial_disk_io and final_disk_io:
+        read_bytes = final_disk_io.read_bytes - initial_disk_io.read_bytes
+        write_bytes = final_disk_io.write_bytes - initial_disk_io.write_bytes
+        
+        print(f"Disk I/O:")
+        print(f"  Read: {read_bytes / 1024**2:.2f} MB")
+        print(f"  Write: {write_bytes / 1024**2:.2f} MB")
+        
+        if disk_read_samples and disk_write_samples:
+            read_rates = [b2 - b1 for b1, b2 in zip(disk_read_samples, disk_read_samples[1:])] if len(disk_read_samples) > 1 else [0]
+            write_rates = [b2 - b1 for b1, b2 in zip(disk_write_samples, disk_write_samples[1:])] if len(disk_write_samples) > 1 else [0]
+            
+            if any(read_rates):
+                print(f"  Peak read rate: {max(read_rates) / 1024**2:.2f} MB/s")
+            if any(write_rates):
+                print(f"  Peak write rate: {max(write_rates) / 1024**2:.2f} MB/s")
+    
+    # System-wide disk usage
+    disk_usage = psutil.disk_usage(os.path.abspath('.'))
+    print(f"Disk usage (current directory):")
+    print(f"  Total: {disk_usage.total / 1024**3:.2f} GB")
+    print(f"  Used: {disk_usage.used / 1024**3:.2f} GB ({disk_usage.percent}%)")
+    print(f"  Free: {disk_usage.free / 1024**3:.2f} GB")
         
     print("-" * len(header) + "\n")
     
